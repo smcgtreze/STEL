@@ -56,7 +56,4 @@ int main(int argc, char* argv[]){
   {
       printf("Valor do histograma para %dº intervalo :%d\n",j,histograma[j]);
   }
-
-
-
 }
