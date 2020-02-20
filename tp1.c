@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <fcntl.h>
 
 
 int main(int argc, char* argv[]){
@@ -57,6 +58,20 @@ int main(int argc, char* argv[]){
       printf("Valor do histograma para %dº intervalo :%d\n",j,histograma[j]);
   }
 
+  save(histograma,N);
 
+}
 
+int save(char *histograma,int size){
+  FILE* file;
+  file= fopen("call.csv","w+");
+
+  if(file == NULL){
+    printf("Erro a abrir o ficheiro\n");
+  }
+
+  for (int j = 0; j < size; j++)
+  {
+      fprintf(file, "%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
+  }
 }
