@@ -1,3 +1,3 @@
 # STEL
 Stuff from Stel
-![Alt text](Stel/Hideout/picture.png?raw=true "Title")
+![Alt text](https://github.com/smcgtreze/STEL/blob/master/Hideout/picture.png?raw=true "Title")
