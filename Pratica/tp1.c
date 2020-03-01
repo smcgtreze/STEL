@@ -62,7 +62,7 @@ int main(int argc, char* argv[]){
 
 }
 
-int save(char *histograma,int size){
+int save(int *histograma,int size){
   FILE* file;
   file= fopen("call.csv","w+");
 
@@ -73,5 +73,6 @@ int save(char *histograma,int size){
   for (int j = 0; j < size; j++)
   {
       fprintf(file, "%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
+      //printf("%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
   }
 }
