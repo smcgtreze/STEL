@@ -4,6 +4,7 @@
 #include <time.h>
 #include <string.h>
 #include <fcntl.h>
+#define DELTA 1E-3
 
 // Defini��o da estrutura da lista
 typedef struct{
@@ -89,7 +90,7 @@ int main(int argc, char* argv[]){
 	 lista  * lista_eventos;
 	 lista_eventos = NULL;
    lambda = atoi(argv[1]);
-   float p;
+   float p,n;
    k = atoi(argv[2]);
    float delta,u;
    delta = (float)(1.0/lambda);// valor max para delta
@@ -97,25 +98,22 @@ int main(int argc, char* argv[]){
    printf("Valor do delta:%.2f\n",delta);
 
    srand((unsigned)(time(NULL)));
-   //float *vetor= malloc(sizeof(long)*(k+2));
    float *vetor= malloc(sizeof(double)*(k+2));
    int *histograma=malloc(sizeof(double)*(k+2));
 
-   p= 1E-3*lambda;
+   p= DELTA*lambda;
    printf("Valor da probabilidade:%.4f\n",p);
 
    memset(histograma,0,0);
    memset(vetor,0,0);
-   float n;
 
   for (int i = 0; i < k; i++)
   {
       n=0;
       while((rand()+1.0f)/RAND_MAX > p){
-        //u=((float)rand()+1.0f)/RAND_MAX;
-        n += 1E-3;
+        n += DELTA;
       }
-      //float c = -(1.0/lambda)*log(u);
+
       vetor[i]= (float) n;
 			lista_eventos = adicionar(lista_eventos, 1, n);
       printf("%dº /-/ %f \n", i+1, n);
@@ -124,9 +122,8 @@ int main(int argc, char* argv[]){
 	//imprimir(lista_eventos);
 
   int N= 1/delta;
-  //printf("Valor de N:%d\n",N);
 	float media = median(vetor,k);
-	//printf("Média de tempos entre chegadas de chamadas : %f\n",media);
+	printf("Média de tempos entre chegadas de chamadas : %f\n",media);
 
   for (int j = 0; j < k; j++)
   {
