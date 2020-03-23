@@ -213,4 +213,5 @@ int save(int *histograma,int size){
       fprintf(file, "%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
       //printf("%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
   }
+  return 0;
 }
