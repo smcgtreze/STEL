@@ -87,18 +87,18 @@ void imprimir (lista * apontador)
 
 int main(int argc, char* argv[]){
 
-   size_t t;
-	 char type;
-   int lambda,k,num=0,Ngrande,busy,blocked;
-	 lista  * lista_eventos;
-	 lista_eventos = NULL;
-   lambda = atoi(argv[1]);
-   k = atoi(argv[2]);
-	 Ngrande = atoi(argv[3]);
-   float delta,u,d,dm=0.008; // miu=1/dm=125 k
-   delta = (float)(1.0/lambda);// valor max para delta
-   delta *=(float)1/5;
-   printf("Valor do delta:%.4f\n",delta);
+    size_t t;
+	char type;
+    int lambda,k,num=0,Ngrande,busy,blocked;
+	lista  * lista_eventos;
+	lista_eventos = NULL;
+    lambda = atoi(argv[1]);
+    k = atoi(argv[2]);
+	Ngrande = atoi(argv[3]);
+    float delta,u,d,dm=0.008; // miu=1/dm=125 k
+    delta = (float)(1.0/lambda);// valor max para delta
+    delta *=(float)1/5;
+    printf("Valor do delta:%.4f\n",delta);
 
    srand((unsigned)(time(NULL)));
    float *vetor= malloc(sizeof(double)*(k+2));
@@ -107,9 +107,9 @@ int main(int argc, char* argv[]){
 
 	 float current=0.0,pblocking;
 
-   memset(histograma,0,0);
-   memset(vetor,0,0);
-	 memset(duracao,0,0);
+   	memset(histograma,0,0);
+   	memset(vetor,0,0);
+	memset(duracao,0,0);
 	 float c=0.0;
 	 lista_eventos = adicionar(lista_eventos, ARRIVAL, 0);
 
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]){
 
 	//imprimir(lista_eventos);
 
-  int N= 1/delta;
+    int N= 1/delta;
 	float media = median(vetor,k);
 	float media2 = median(duracao,k);
 	pblocking =(float) blocked/k;
@@ -185,7 +185,7 @@ int main(int argc, char* argv[]){
       //printf("Valor do histograma para %dº intervalo :%d\n",j,histograma[j]);
   }
 
-  save(histograma,N);
+  	save(histograma,N);
 	free(histograma);
 	free(duracao);
 	free(vetor);
