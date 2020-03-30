@@ -88,9 +88,9 @@ void imprimir (lista * apontador)
 
 int main(int argc, char* argv[]){
 
-   size_t t;
-	 char type;
-   int lambda,k,num=0,Ngrande,busy=0,blocked=0,narrivals=0,ndepartures=0,j=0;
+   	size_t t=0;
+	char type;
+   	int lambda=0,k=0,num=0,Ngrande=0,busy=0,blocked=0,narrivals=0,ndepartures=0,j=0;
 	 lista  * lista_eventos;
 	 lista_eventos = NULL;
 	 lista  * queue;
@@ -104,19 +104,21 @@ int main(int argc, char* argv[]){
    printf("Valor do delta:%.4f\n",delta);
 
    srand((unsigned)(time(NULL)));
-   float *vetor= malloc(sizeof(double)*(k+2));
-	 float *del= malloc(sizeof(double)*(k+2));
-	 float *duracao= malloc(sizeof(double)*(k+2));
-	 float *buffer= malloc(sizeof(double)*(k+2));
-   int *histograma=malloc(sizeof(double)*(k+2));
+    float *vetor= malloc(sizeof(double)*(k+2));
+	float *del= malloc(sizeof(double)*(k+2));
+	float *duracao= malloc(sizeof(double)*(k+2));
+	float *buffer= malloc(sizeof(double)*(k+2));
+    int *histograma=malloc(sizeof(double)*(k+2));
 
 	 float current=0.0,pblocking=0.0;
 
-   memset(histograma,0,0);
-   memset(vetor,0,0);
-	 memset(duracao,0,0);
-	 float c=0.0;
-	 lista_eventos = adicionar(lista_eventos, ARRIVAL,0);
+    memset(histograma,0,0);
+    memset(vetor,0,0);
+	memset(duracao,0,0);
+	memset(del,0,0);
+
+	float c=0.0;
+	lista_eventos = adicionar(lista_eventos, ARRIVAL,0);
 
   for (int i = 0; i < k; i++)
   {
@@ -143,7 +145,7 @@ int main(int argc, char* argv[]){
 				 lista_eventos = remover(lista_eventos);
 			 }
 			 current+=lista_eventos->tempo;
-			 duracao[ndepartures]= (float) d;
+			 duracao[ndepartures] = (float) d;
 			 ++ndepartures;
 			 busy--;
 			 lista_eventos = remover(lista_eventos);
@@ -151,7 +153,7 @@ int main(int argc, char* argv[]){
 
 		 else if (lista_eventos->tipo == ARRIVAL ){ //inicio de chamada
 			 	 busy++;
-				 if(busy > Ngrande){ //recursos livres? Não
+				 if(busy >= Ngrande){ //recursos livres? Não
 					 delay = (d - lista_eventos->tempo);
 					 del[blocked] = delay;
 					 ++blocked;
@@ -175,9 +177,9 @@ int main(int argc, char* argv[]){
 				busy=0;
 			}
 
-			if(busy > Ngrande){
-				busy=Ngrande;
-			}
+			// if(busy > Ngrande){
+			// 	busy=Ngrande;
+			// }
 
 	   // vetor[i]= (float) c;
 		 //duracao[i]= (float) d;
@@ -244,6 +246,7 @@ float sort(float a[],int Ngrande)
         }
     }
 }
+return 0;
 }
 
 
@@ -260,4 +263,5 @@ int save(int *histograma,int size){
       fprintf(file, "%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
       //printf("%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
   }
+  return 0;
 }
