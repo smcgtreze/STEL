@@ -87,22 +87,29 @@ void imprimir (lista * apontador)
 
 int main(int argc, char* argv[]){
 
-   size_t t;
+   time_t t;
    char type;
-   int lambda,k,num=0,Ngrande,busy=0,blocked=0,narrivals=0,ndepartures=0,j=0;
+   int lambda, k ,num=0 ,Ngrande ,busy=1 ,blocked=0 ,narrivals=0 ,ndepartures=0 ,j=0;
+
    lista  * lista_eventos;
    lista_eventos = NULL;
    lista  * queue;
+
    queue = NULL;
    lambda = atoi(argv[1]);
    k = atoi(argv[2]);
    Ngrande = atoi(argv[3]);
-   float delta,u=0.0,d=0.0,dm=0.008,delay=0.0,c=0.0,aux=0.0; // miu=1/dm=125 k
+
+   float delta ,u=0.0 ,d=0.0 ,dm=0.008 ,delay=0.0 ,c=0.0 ,aux=0.0; // miu=1/dm=125 k
+   
    delta = (float)(1.0/lambda);// valor max para delta
    delta *=(float)1/5;
+
    printf("Valor do delta:%.4f\n",delta);
 
-   srand((unsigned)(time(NULL)));
+    int seed = clock();
+    srand(seed);
+
    float *vetor= malloc(sizeof(double)*(k+2));
    float *del= malloc(sizeof(double)*(k+2));
    float *duracao= malloc(sizeof(double)*(k+2));
@@ -115,19 +122,19 @@ int main(int argc, char* argv[]){
      memset(vetor,0,0);
 	 memset(duracao,0,0);
 	 memset(del,0,0);
-	 lista_eventos = adicionar(lista_eventos, ARRIVAL,0);
-	 u=(rand()+1)/(float)RAND_MAX;
+
+	u=(rand()+1)/(float)RAND_MAX;
+	
+	 c = -(log(u)/lambda);
+	 lista_eventos = adicionar(lista_eventos, ARRIVAL, c);
+
 	 d= (float)-dm*log(u); //duração da chamada
-	 lista_eventos = adicionar(lista_eventos, DEPARTURE,d); 
+	 lista_eventos = adicionar(lista_eventos, DEPARTURE, d); 
 
 
   for (int i = 0; i < k; i++)
   {
-		u=(rand()+1)/(float)RAND_MAX;
-		c = -(1.0/lambda)*log(u); //intervalo entre esta e aprox chamada
-		u=(rand()+1)/(float)RAND_MAX;
-		d= (float)-dm*log(u); //duração da chamada
-
+		
 		if(lista_eventos->tipo == DEPARTURE){ //fim de chamada
 			 current += lista_eventos->tempo;
 			 duracao[ndepartures]= (float) d;
