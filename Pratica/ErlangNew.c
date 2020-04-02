@@ -101,7 +101,7 @@ int main(int argc, char* argv[]){
 
    time_t t;
    char type;
-   int L,lambda, k ,num=0 ,Ngrande ,busy=1 ,blocked=0 ,narrivals=0 ,ndepartures=0 ,j=0,lost=0;
+   int L,lambda, k ,num=0 ,Ngrande ,busy=0,delayed=0 ,narrivals=0 ,ndepartures=0 ,j=0,lost=0;
 
    lista  * lista_eventos;
    lista_eventos = NULL;
@@ -136,66 +136,57 @@ int main(int argc, char* argv[]){
 	 memset(duracao,0,0);
 	 memset(del,0,0);
 
-	 u=(rand()+1)/(float)RAND_MAX;
-	 c = -(log(u)/lambda);
-	 lista_eventos = adicionar(lista_eventos, ARRIVAL, 0);
-     
-     u=(rand()+1)/(float)RAND_MAX;
+     u = (float)(rand()+1)/RAND_MAX;
 	 d= (float)-dm*log(u); //duração da chamada
+	 lista_eventos = adicionar(lista_eventos, ARRIVAL, 0);
 	 lista_eventos = adicionar(lista_eventos, DEPARTURE,d); 
-	 printf("Valor de L:%d",L);
 
 
   for (int i = 0; i < k; i++)
   {
-     u=(rand()+1)/(float)RAND_MAX;
+     u = (float)(rand()+1)/RAND_MAX;
 	 c = -(log(u)/lambda);
-     u=(rand()+1)/(float)RAND_MAX;
+     u = (float)(rand()+1)/RAND_MAX;
 	 d= (float)-dm*log(u); //duração da chamada
+	 printf("Evento do tipo %d\n",lista_eventos->tipo);
 		
 		if(lista_eventos->tipo == DEPARTURE){ //fim de chamada
              duracao[ndepartures]= (float) d;
              ++ndepartures;
              current =lista_eventos->tempo;
+			 lista_eventos = remover(lista_eventos);
+			 busy--;
+
 			 if(queue != NULL){ // se há elementos na queue
-				 del[blocked-1] = lista_eventos->tempo-queue->tempo;
+				 del[delayed-1] = current-queue->tempo;
 				 queue = remover(queue);
-				 lista_eventos = adicionar(lista_eventos,DEPARTURE,lista_eventos->tempo+d);
+				 ++busy;
+				 lista_eventos = adicionar(lista_eventos,DEPARTURE,current+d);
 			 }
-             lista_eventos = remover(lista_eventos);
-             busy--;
 		 }
 
 		 else if (lista_eventos->tipo == ARRIVAL ){ //inicio de chamada
 		 		vetor[narrivals]= (float) c;
 		 		narrivals++;
-                busy++;
-                //lista_eventos = adicionar(lista_eventos, ARRIVAL, lista_eventos->tempo+c); // atendimento
-				if(busy <= Ngrande){ // Recursos livres? sim canais livres queue nao interessa
-					 lista_eventos = adicionar(lista_eventos, ARRIVAL, lista_eventos->tempo+c); // atendimento
-					 current =lista_eventos->tempo;
-                     lista_eventos = adicionar(lista_eventos, DEPARTURE, lista_eventos->tempo+d); 
-					 lista_eventos = remover(lista_eventos);
+				current = lista_eventos->tempo;
+				lista_eventos = remover(lista_eventos);
+				lista_eventos = adicionar(lista_eventos, ARRIVAL, current+c); // atendimento
+
+				if(busy < Ngrande){ // Recursos livres? sim: canais ,queue nao interessa
+					 busy++;
+					 if((getCount(queue)) == 0){
+                     	lista_eventos = adicionar(lista_eventos, DEPARTURE, current+d); 
+					 }
 				 }
 
 				else if((getCount(queue)) < L ){ //canais ocupados , queue livre
-					 lista_eventos = adicionar(lista_eventos, ARRIVAL, lista_eventos->tempo+c); // atendimento
-					 ++blocked;			 
-					 queue = adicionar(queue, ARRIVAL, lista_eventos->tempo);
-					 lista_eventos = remover(lista_eventos);
+					 ++delayed;			 
+					 queue = adicionar(queue, ARRIVAL, current);
 				 }
 
-                else { // queue ocupada
+                else { // queue ocupada, recalcula a chegada
                      ++lost;
-					 u=(rand()+1)/(float)RAND_MAX;
-					 c = -(log(u)/lambda);
-     				 u=(rand()+1)/(float)RAND_MAX;
-					 d= (float)-dm*log(u); //duração da chamada
-
-					 current = lista_eventos->tempo;
-					 lista_eventos = remover(lista_eventos);
-					 lista_eventos = adicionar(lista_eventos, ARRIVAL, current+c); // atendimento
-					 lista_eventos = adicionar(lista_eventos, DEPARTURE, current+d); 
+					 //lista_eventos = adicionar(lista_eventos, DEPARTURE, current+d); 
                 }				 
 		 	}
 
@@ -209,13 +200,13 @@ int main(int argc, char* argv[]){
 			// }
 
 	   //printf("Próximo Evento do tipo %d - :%f - %f - %f\n",lista_eventos->tipo,d,c,current);
-	   printf("%dº /-/ %f /-/ %f /-/ %f /-/ %d\n", i+1, d, c,current,getCount(queue));
+	   printf("%dº /-/ %f /-/ %f /-/ %f /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue),busy,delayed,lost);
   }
 
     imprimir(queue);
 	printf("Tamanho da queue:%d\n",getCount(queue));
 
-       for (int j = 0; j < blocked-1; j++)
+       for (int j = 0; j < delayed-1; j++)
     {
        //printf("Valor %d do del :%f\n",j, del[j]);
 	  
@@ -226,10 +217,11 @@ int main(int argc, char* argv[]){
   	int N = 1/delta;
 	float media = median(vetor,narrivals);
 	float media2 = median(duracao,ndepartures);
-	float media3= median(del,blocked);
-	pblocking =(float) blocked/narrivals;
+	float media3= median(del,delayed);
+	pblocking =(float) delayed/(narrivals);
 	float plost = (float) lost/narrivals;
-	printf("Chamadas bloqueadas : %d\n",blocked);
+	printf("Chamadas bloqueadas : %d\n",delayed);
+	printf("Chamadas perdidas : %d\n",lost);
 	printf("Probabilidade de atraso : %f\n",pblocking);
 	printf("Probabilidade de perda : %f\n",plost);
 	printf("Média de tempos entre chegadas de chamadas : %f\n",media);
@@ -237,7 +229,7 @@ int main(int argc, char* argv[]){
 	printf("Média de atraso dos pacotes : %f\n",media3);
     printf("Delta : %f\n",delta);
 
-  for (int j = 0; j < blocked-1; j++)
+  for (int j = 0; j < delayed-1; j++)
   {
     for (int n = 0;n < N;n++){
       if((del[j] >= n*delta) && (del[j] < (n+1)*delta)){
