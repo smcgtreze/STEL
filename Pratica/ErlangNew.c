@@ -101,7 +101,7 @@ int main(int argc, char* argv[]){
 
    time_t t;
    char type;
-   int L,lambda, k ,num=0 ,Ngrande ,busy=0,delayed=0 ,narrivals=0 ,ndepartures=0 ,j=0,lost=0;
+   int L,lambda, k ,num=0 ,Ngrande ,busy=0,delayed=0 ,narrivals=0 ,ndepartures=0 ,j=0,lost=0,count=0;
 
    lista  * lista_eventos;
    lista_eventos = NULL;
@@ -113,12 +113,11 @@ int main(int argc, char* argv[]){
    Ngrande = atoi(argv[3]);
    L = atoi(argv[4]);
 
-   double delta ,u=0.0 ,d=0.0 ,dm=0.008 ,delay=0.0 ,c=0.0 ,aux=0.0; // miu=1/dm=125 k
+   double delta ,u=0.0 ,d=0.0 ,dm=0.008 ,delay=0.0 ,c=0.0 ,aux=0.0,ax = 0.005; // miu=1/dm=125 k
+   printf(": %lf\n",ax);
    
    delta = (float)(1.0/lambda);// valor max para delta
    delta *=(float)1/5;
-
-   printf("Valor do delta:%.4f\n",delta);
 
     int seed = clock();
     srand(seed);
@@ -148,7 +147,6 @@ int main(int argc, char* argv[]){
 	 c = -(log(u)/lambda);
      u = (float)(rand()+1)/RAND_MAX;
 	 d= (float)-dm*log(u); //duração da chamada
-	 printf("Evento do tipo %d\n",lista_eventos->tipo);
 		
 		if(lista_eventos->tipo == DEPARTURE){ //fim de chamada
              duracao[ndepartures]= (float) d;
@@ -159,6 +157,9 @@ int main(int argc, char* argv[]){
 
 			 if(queue != NULL){ // se há elementos na queue
 				 del[delayed-1] = current-queue->tempo;
+				 if(del[delayed-1] > ax){
+						count++;
+					}
 				 queue = remover(queue);
 				 ++busy;
 				 lista_eventos = adicionar(lista_eventos,DEPARTURE,current+d);
@@ -194,25 +195,20 @@ int main(int argc, char* argv[]){
 				busy=0;
 			}
 
-
-			// if(busy > Ngrande){
-			// 	busy=Ngrande;
-			// }
-
-	   //printf("Próximo Evento do tipo %d - :%f - %f - %f\n",lista_eventos->tipo,d,c,current);
-	   printf("%dº /-/ %f /-/ %f /-/ %f /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue),busy,delayed,lost);
+	   //printf("%dº /-/ %f /-/ %f /-/ %f /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue),busy,delayed,lost);
   }
 
     imprimir(queue);
-	printf("Tamanho da queue:%d\n",getCount(queue));
+	//printf("Tamanho da queue:%d\n",getCount(queue));
 
        for (int j = 0; j < delayed-1; j++)
     {
-       //printf("Valor %d do del :%f\n",j, del[j]);
+      // printf("Valor %d do del :%f\n",j, del[j]);
 	  
     }
 	printf("Numero de arrivals :%d\n",narrivals);
 	printf("Numero de departures :%d\n",ndepartures);
+	printf("Probabilidade de ser atrasado mais que ax=%lf :%f\n",ax,(float)count*1.0/delayed);
     //delta=lambda*dm;
   	int N = 1/delta;
 	float media = median(vetor,narrivals);
@@ -231,7 +227,7 @@ int main(int argc, char* argv[]){
 
   for (int j = 0; j < delayed-1; j++)
   {
-    for (int n = 0;n < N;n++){
+    for (int n = 0;n < N/4;n++){
       if((del[j] >= n*delta) && (del[j] < (n+1)*delta)){
         histograma[n]++;
       }
