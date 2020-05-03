@@ -25,6 +25,7 @@ float median(float *vetor,int size);
 int save(int *histograma,int size);
 double BoxMuller(void);
 int getCount(lista* head);
+float running(float *avg,float current_sample, int n);
 
 // Fun��o que remove o primeiro elemento da lista
 lista * remover (lista * apontador)
@@ -108,7 +109,7 @@ int main(int argc, char* argv[]){
 
    time_t t;
    float call_type=0.0;
-   int L,lambda, k ,num=0 ,Ngrande,Ngrande_AS=10,ds=0,as=0,busy=0,busy_AS=0,delayed=0 ,narrivals=0 ,ndepartures=0,dep_A=0,dep=0 ,j=0,lost=0,count=0,general=0,area=0;
+   int L,lambda, k ,num=0 ,Ngrande,Ngrande_AS=5,ds=0,as=0,busy=0,busy_AS=0,delayed=0,delayed_a=0,narrivals=0 ,ndepartures=0,dep_A=0,dep=0 ,j=0,lost=0,count=0,general=0,area=0;
 
    lista  * lista_eventos;
    lista_eventos = NULL;
@@ -118,10 +119,10 @@ int main(int argc, char* argv[]){
    queue_area = NULL;
    lambda = 80; //calls/hora 
    k = 5000;      //geralmente 5000
-   Ngrande = 10;  //nº de canais
-   L = 10; // tamanho da fila
+   Ngrande = 5;  //nº de canais
+   L = 50; // tamanho da fila
 
-   double delta ,b=0.0 ,u=0.0 ,d=0.0 ,dm=(double)2.0/60,dm_A=2.5/60,delay=0.0 ,c=0.0 ,ax = 0.005; // duração minima em horas
+   double delta ,b=0.0 ,u=0.0 ,d=0.0,dm=(double)2.0/60,dm_A=2.5/60,delay=0.0 ,c=0.0 ,ax = 0.005; // duração minima em horas
    
    delta = (float)(1.0/lambda);// valor max para delta
    delta *=(float)1/5;
@@ -131,6 +132,7 @@ int main(int argc, char* argv[]){
 
    float *vetor= malloc(sizeof(double)*(k+2));
    float *del= malloc(sizeof(double)*(k+2));
+   float *del_a= malloc(sizeof(double)*(k+2));
    float *duracao= malloc(sizeof(double)*(k+2));
    float *duracao_gauss= malloc(sizeof(double)*(k+2));
    float *buffer= malloc(sizeof(double)*(k+2));
@@ -143,6 +145,7 @@ int main(int argc, char* argv[]){
 	memset(duracao,0,0);
 	memset(duracao_gauss,0,0);
 	memset(del,0,0);
+	memset(del_a,0,0);
 
     u = (float)(rand()+1)/RAND_MAX;
 	d= (float)-dm*log(u); //duração da chamada
@@ -159,9 +162,10 @@ int main(int argc, char* argv[]){
      call_type = (float)(rand()+1)/RAND_MAX;
 		
 		if(lista_eventos->tipo == DEPARTURE){ //fim de chamada
-             duracao[dep]= (float) d;
-             ++ndepartures;
+			 //duracao[dep]= (float) d;
+			 duracao[dep] = (float) running(duracao,(float) d,dep);
 			 ++dep;
+			 ++ndepartures;
              current = lista_eventos->tempo;
 			 lista_eventos = remover(lista_eventos);
 			 busy--;
@@ -172,7 +176,6 @@ int main(int argc, char* argv[]){
 				 }
 				 if(queue->tipo == ARRIVAL){
 				 	lista_eventos = adicionar(lista_eventos,DEPARTURE,current+d);
-					 duracao_gauss[dep]= (float) d;
 				 }
 				 else if(queue->tipo == ARRIVAL_A){
 					b = (float) BoxMuller();
@@ -191,6 +194,8 @@ int main(int argc, char* argv[]){
 			 ++ndepartures;
 			 busy_AS--;
 			 if(queue_area != NULL){ // se há elementos na queue
+			 	 del_a[delayed_a-1] = current-queue_area->tempo;
+				 //printf("Atraso na fila da espera: %f min\n",60*del_a[delayed_a-1]);
 			 	 u = (float)(rand()+1)/RAND_MAX;
 				 d= (float)-dm_A*log(u); //duração da chamada
 				 lista_eventos = adicionar(lista_eventos,DEPARTURE_AS,current+d);
@@ -200,7 +205,8 @@ int main(int argc, char* argv[]){
 		 }
 
 		 if(lista_eventos->tipo == DEPARTURE_A){ //fim de chamada
-			 printf("duracao[%d]:%lf\n",dep_A,duracao_gauss[dep_A]);
+			 //duracao_gauss[dep_A] = (float) b;
+			 duracao_gauss[dep_A] = (float) running(duracao_gauss,(float) b,dep_A);
              ++ndepartures;
 			 ++dep_A;
              current = lista_eventos->tempo;
@@ -214,7 +220,6 @@ int main(int argc, char* argv[]){
 				 }
 			     if(queue->tipo == ARRIVAL){
 				 	lista_eventos = adicionar(lista_eventos,DEPARTURE,current+d);
-					duracao_gauss[dep]= (float) d;
 				 }
 				 else if(queue->tipo == ARRIVAL_A){
 					b = (float) BoxMuller();
@@ -224,8 +229,8 @@ int main(int argc, char* argv[]){
 				 queue = remover(queue);
 				 ++busy;
 			}
-			printf("Transfering to Area specific\n");
-			lista_eventos = adicionar(lista_eventos, ARRIVAL_AS, current+c); // atendimento
+			//printf("Transfering to Area specific\n");
+			lista_eventos = adicionar(lista_eventos, ARRIVAL_AS, current); // atendimento
 		 }
 
 		 else if (lista_eventos->tipo == ARRIVAL || lista_eventos->tipo == ARRIVAL_A ){ //inicio de chamada
@@ -240,16 +245,14 @@ int main(int argc, char* argv[]){
 					lista_eventos = adicionar(lista_eventos, ARRIVAL, current+c); // atendimento
 					++general;
 					while(d <1.0/60 || d > 5.0/60){ //recalcula
-						// // printf("Exponencial: %f\n",d);
 						u = (float)(rand()+1)/RAND_MAX;
 	 					d= (float)-dm*log(u); //duração da chamada
 					}
-						printf("Exponencial: %f\n",d);
+						//printf("Exponencial: %f\n",d);
 						if(busy < Ngrande){ // Recursos livres? sim: canais ,queue nao interessa
 							busy++;
 							if((getCount(queue)) == 0){
 								lista_eventos = adicionar(lista_eventos, DEPARTURE, current+d);
-								duracao[dep]= (float) d; 
 							}
 						}
 
@@ -264,24 +267,22 @@ int main(int argc, char* argv[]){
 				}
 
                 else if(call_type > 0.3 && call_type <= 1){ //General purpose + Area_specific 
-                    //printf("Area Specific\n");
-					// printf("Box1 em min: %f\n",b); 
 					b = (float) BoxMuller();
 	 				b = b/60; // em horas 
 					lista_eventos = adicionar(lista_eventos, ARRIVAL_A, current+c); // atendimento
 					++area;
 					
 					while(b > 2.0/60 || b<0.5/60){ //In minutes
-						// // printf("Box: %f\n",d);
 						b = (float) BoxMuller();
 	 					b = b/60; // em horas
 					}
 
-						printf("Box em h: %f\n",b);
+						//printf("Box em h: %f\n",b);
 						if(busy < Ngrande){ // Recursos livres? sim: canais ,queue nao interessa
 					 		busy++;
 							if((getCount(queue)) == 0){
 								lista_eventos = adicionar(lista_eventos, DEPARTURE_A, current+b);
+								
 							}
 				 		}
 
@@ -297,8 +298,7 @@ int main(int argc, char* argv[]){
                 }				 
 		 	}
 
-			else if(lista_eventos->tipo == ARRIVAL_AS){
-				    vetor[narrivals]= (float) c;
+		else if(lista_eventos->tipo == ARRIVAL_AS){
 		 		    narrivals++;
 				    current = lista_eventos->tempo;
 				    lista_eventos = remover(lista_eventos);
@@ -306,7 +306,7 @@ int main(int argc, char* argv[]){
 					u = (float)(rand()+1)/RAND_MAX;
 					d= (float)-dm_A*log(u); //duração da chamada
 
-					while(d <1.0/60){ //recalcula
+					while(d < 1.0/60){ //recalcula
 						// // printf("Exponencial: %f\n",d);
 						u = (float)(rand()+1)/RAND_MAX;
 	 					d= (float)-dm_A*log(u); //duração da chamada
@@ -314,33 +314,30 @@ int main(int argc, char* argv[]){
 
 					if(busy_AS < Ngrande_AS){ // Recursos livres? sim: canais ,queue nao interessa
 						busy_AS++;
-						if((getCount(queue_area)) == 0){
-							lista_eventos = adicionar(lista_eventos, DEPARTURE_AS, current+d);
-								// duracao[dep]= (float) d; 
-						}
+						//printf("Area Specific em h: %f\n",d);
+						lista_eventos = adicionar(lista_eventos, DEPARTURE_AS, current+d);
 					}
 
 					else { // queue infinita,mete na fila
-						++delayed;			 
-						queue = adicionar(queue_area, ARRIVAL_AS, current);
+						++delayed_a;			 
+						queue_area = adicionar(queue_area, ARRIVAL_AS, current);
 					}
-			}
+		}
 
 			if(busy < 0){
 				busy=0;
 			}
 
+			if(busy_AS < 0){
+				busy_AS=0;
+			}
+		//printf("%dº /-/ %f /-/ %f /-/ %f /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue_area),busy_AS,delayed_a,lost);
 	   //printf("%dº /-/ %f /-/ %f /-/ %f /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue),busy,delayed,lost);
   }
 
-    imprimir(queue);
-	//printf("Tamanho da queue:%d\n",getCount(queue));
+    //imprimir(queue);
+	imprimir(queue_area);
 
-       for (int j = 0; j < delayed-1; j++)
-    {
-      // printf("Valor %d do del :%f\n",j, del[j]);
-	  
-    }
     printf("Numero de Area Specific specific arrivals:%d\n",as);
 	printf("Numero de Area Specific specific departures:%d\n",ds);
 	printf("Numero de general purpose arrivals:%d\n",general);
@@ -349,24 +346,25 @@ int main(int argc, char* argv[]){
 	printf("Numero de general to area specific departures:%d\n",dep_A);
 	printf("Numero de arrivals :%d\n",narrivals);
 	printf("Numero de departures :%d\n",ndepartures);
-	printf("Probabilidade de ser atrasado mais que ax=%lf :%f\n",ax,(float)count*1.0/delayed);
+	//printf("Probabilidade de ser atrasado mais que ax=%lf :%f\n",ax,(float)count*1.0/delayed);
     //delta=lambda*dm;
   	int N = 1/delta;
 	float media = median(vetor,narrivals);
 	float media2 = median(duracao,dep);
 	float media3= median(del,delayed);
 	float media4 = median(duracao_gauss,dep_A);
+	float media5= median(del_a,delayed_a);
 	pblocking =(float) delayed/(narrivals);
 	float plost = (float) lost/narrivals;
 	printf("Chamadas atrasadas : %d\n",delayed);
 	printf("Chamadas perdidas : %d\n",lost);
 	printf("Probabilidade de atraso : %f\n",pblocking);
 	printf("Probabilidade de perda : %f\n",plost);
-	printf("Média de tempos entre chegadas de chamadas : %f\n",media);
-	printf("Média de duração de chamadas general exp: %f h\n",media2);
-	printf("Média de atraso dos pacotes : %f\n",media3);
-	printf("Média de duração de chamadas general gauss : %f h\n",media4);
-    printf("Delta : %f\n",delta);
+	printf("Média de tempos entre chegadas de chamadas : %f min\n",media*60);
+	printf("Média de duração de chamadas general exp: %f min\n",media2*60);
+	printf("Média de atraso de fila na entrada general purpose: %f min\n",media3*60);
+	printf("Média de duração de chamadas general gauss : %f min\n",media4*60);
+	printf("Média de atraso de fila em area specific: %f min\n",media5*60);
 
   for (int j = 0; j < delayed-1; j++)
   {
@@ -381,7 +379,7 @@ int main(int argc, char* argv[]){
 }
 
 float median(float *vetor,int size){
-	float soma;
+	float soma=0.0;
 	for(int i=0;i < size;i++){
 		soma+=vetor[i];
 	}
@@ -426,5 +424,15 @@ double BoxMuller(void){
 	call = !call;
 
 	return (MU + SIGMA * (double) X1);
+}
+
+float running(float *avg,float current_sample, int n){
+	if(n > 1){
+		avg[n] =(float) avg[n-1] * (n-1)/n + current_sample * 1/n;
+		return avg[n];
+	}
+	else{
+		return current_sample;    
+	}
 }
   
