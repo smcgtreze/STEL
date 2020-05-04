@@ -109,7 +109,7 @@ int main(int argc, char* argv[]){
 
    time_t t;
    float call_type=0.0;
-   int new=0,L,lambda, k ,num=0 ,Ngrande,Ngrande_AS=0,ds=0,as=0,busy=0,busy_AS=0,delayed=0,delayed_a=0,narrivals=0 ,ndepartures=0,dep_A=0,dep=0 ,j=0,lost=0,count=0,general=0,area=0;
+   int new=0,L,lambda, k ,num=0 ,Ngrande,Ngrande_AS=0,ds=0,as=0,busy=0,busy_AS=0,delayed=0,delayed2=0,delayed_a=0,narrivals=0 ,ndepartures=0,dep_A=0,dep=0 ,j=0,lost=0,count=0,general=0,area=0;
 
    lista  * lista_eventos;
    lista_eventos = NULL;
@@ -133,6 +133,8 @@ int main(int argc, char* argv[]){
 
    float *vetor= malloc(sizeof(double)*(k+2));
    float *del= malloc(sizeof(double)*(k+2));
+   float *erro= malloc(sizeof(double)*(k+2));
+   float *pred= malloc(sizeof(double)*(k+2));
    float *del_a= malloc(sizeof(double)*(k+2));
    float *duracao= malloc(sizeof(double)*(k+2));
    float *duracao_gauss= malloc(sizeof(double)*(k+2));
@@ -147,6 +149,8 @@ int main(int argc, char* argv[]){
 	memset(duracao,0,0);
 	memset(duracao_gauss,0,0);
 	memset(del,0,0);
+	memset(erro,0,0);
+	memset(pred,0,0);
 	memset(del_a,0,0);
 	memset(total_del,0,0);
 
@@ -173,9 +177,13 @@ int main(int argc, char* argv[]){
 			 lista_eventos = remover(lista_eventos);
 			 busy--;
 			 if(queue != NULL){ // se há elementos na queue
-				 del[delayed-1] = current-queue->tempo;
-				 //del[delayed-1] = (float) running(del,(float)(current-queue->tempo),delayed-1);
-				 if(del[delayed-1] > ax){
+			 	 ++delayed2;
+				 del[delayed2-1] = current-queue->tempo;
+				 pred[delayed2-1] = (float) running(pred,(float)(current-queue->tempo),delayed2-1);
+				 erro[delayed2-1] = (float)fabs(del[delayed2-1]-pred[delayed2-1]);
+				 printf("Erro %f\n",erro[delayed2-1]);
+				 printf("pred[%d]= %f del =%f min\n",delayed2-1,60*pred[delayed2-1],60*del[delayed2-1]);
+				 if(del[delayed2-1] > ax){
 						count++;
 				 }
 
@@ -186,7 +194,7 @@ int main(int argc, char* argv[]){
 					b = (float) BoxMuller();
 	 				b = b/60; // em horas 
 				 	lista_eventos = adicionar(lista_eventos,DEPARTURE_A,current+b);
-					total_del[new] = (float) b + del[delayed-1];
+					total_del[new] = (float) b + del[delayed2-1];
 					++new;
 				 }
 				 queue = remover(queue);
@@ -202,6 +210,7 @@ int main(int argc, char* argv[]){
 			 busy_AS--;
 			 if(queue_area != NULL){ // se há elementos na queue
 			 	 del_a[delayed_a-1] = current-queue_area->tempo;
+				 total_del[as] += (float) del_a[delayed_a-1]; //como não há chamadas perdidas o numero de arrivals=numero de atrasos
 			 	 u = (float)(rand()+1)/RAND_MAX;
 				 d= (float)-dm_A*log(u); //duração da chamada
 				 lista_eventos = adicionar(lista_eventos,DEPARTURE_AS,current+d);
@@ -218,12 +227,15 @@ int main(int argc, char* argv[]){
              current = lista_eventos->tempo;
 			 lista_eventos = remover(lista_eventos);
 			 busy--;
-			 printf("Atrasos totais: %f\n",total_del[new-1]);
 
 			 if(queue != NULL){ // se há elementos na queue
-				 del[delayed-1] = current-queue->tempo;
-				 //del[delayed-1] = (float) running(del,(float)(current-queue->tempo),delayed-1);
-				 if(del[delayed-1] > ax){
+			 	 ++delayed2;
+				 del[delayed2-1] = current-queue->tempo;
+				 pred[delayed2-1] = (float) running(pred,(float)(current-queue->tempo),delayed2-1);
+				 erro[delayed2-1] = (float)fabs(del[delayed2-1]-pred[delayed2-1]);
+				 printf("Erro %f\n",erro[delayed2-1]);
+				 printf("pred[%d]= %f del =%f min\n",delayed2-1,60*pred[delayed2-1],60*del[delayed2-1]);
+				 if(del[delayed2-1] > ax){
 						count++;
 				 }
 			     if(queue->tipo == ARRIVAL){
@@ -233,7 +245,8 @@ int main(int argc, char* argv[]){
 					b = (float) BoxMuller();
 	 				b = b/60; // em horas 
 				 	lista_eventos = adicionar(lista_eventos,DEPARTURE_A,current+b);
-					total_del[new] = (float) b + del[delayed-1];
+					total_del[new] = (float) b + del[delayed2-1];
+					printf("Atrasos totais[%d] = %f\n",new-1,total_del[new-1]);
 					++new;
 				 }
 				 queue = remover(queue);
@@ -343,7 +356,7 @@ int main(int argc, char* argv[]){
 			if(busy_AS < 0){
 				busy_AS=0;
 			}
-		//printf("%dº /-/ %f /-/ %f /-/ %f /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue_area),busy_AS,delayed_a,lost);
+	    //printf("%dº /-/ %f /-/ %f /-/ %f /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue_area),busy_AS,delayed_a,lost);
 	   //printf("%dº /-/ %f /-/ %f /-/ %f /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue),busy,delayed,lost);
   }
 
@@ -368,6 +381,7 @@ int main(int argc, char* argv[]){
 	float media4 = median(duracao_gauss,dep_A);
 	float media5= median(del_a,delayed_a);
 	float media6= median(total_del,delayed_a);
+	float media7= median(pred,delayed);
 	pblocking =(float) delayed/(narrivals);
 	float plost = (float) lost/narrivals;
 	printf("Chamadas atrasadas : %d\n",delayed);
@@ -376,15 +390,17 @@ int main(int argc, char* argv[]){
 	printf("Probabilidade de perda : %f\n",plost);
 	printf("Média de tempos entre chegadas de chamadas : %f min\n",media*60);
 	printf("Média de duração de chamadas general exp: %f min\n",duracao[dep-1]*60);
-	printf("Média de atraso de fila na entrada general purpose: %f min\n",media3*60);
+	printf("Média de atraso de fila na entrada general purpose real: %f min\n",media3*60);
+	printf("Média de atraso de fila na entrada general purpose prevista: %f min\n",media7*60);
 	printf("Média de duração de chamadas general gauss : %f min\n",duracao_gauss[dep_A-1]*60);
 	printf("Média de atraso de fila em area specific: %f min\n",media5*60);
 	printf("Média de atraso total em area specific: %f min\n",media6*60);
+	printf("DEL1 %d \t, DEL2 %d\n", delayed, delayed2);
 
-  for (int j = 0; j < delayed-1; j++)
+  for (int j = 0; j < delayed2-1; j++)
   {
     for (int n = 0;n < N/4;n++){
-      if((del[j] >= n*delta) && (del[j] < (n+1)*delta)){
+      if((erro[j] >= n*DELTA) && (erro[j] < (n+1)*DELTA)){
         histograma[n]++;
       }
     }
@@ -413,7 +429,8 @@ int save(int *histograma,int size){
   {
       fprintf(file, "%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
       //printf("%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
-  }}
+  }
+  }
 
   
 double BoxMuller(void){
