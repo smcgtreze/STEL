@@ -27,6 +27,11 @@ double BoxMuller(void);
 int getCount(lista* head);
 float running(float *avg,float current_sample, int n);
 
+int cmpfunc (const void * a, const void * b) {
+   const float *A = a, *B = b;
+   return (*A > *B) - (*A < *B);
+}
+
 // Fun��o que remove o primeiro elemento da lista
 lista * remover (lista * apontador)
 {
@@ -114,14 +119,14 @@ int main(int argc, char* argv[]){
    lista  * lista_eventos;
    lista_eventos = NULL;
    lista  * queue,*queue_area;
-
    queue = NULL;
    queue_area = NULL;
+
    lambda = 80; //calls/hora 
-   k = 5000;      //geralmente 5000
-   Ngrande = 3;  //nº de canais
-   Ngrande_AS = 4;
-   L = 8; // tamanho da fila
+   k = 100000;      //geralmente 5000
+   Ngrande = 5;  //nº de canais
+   Ngrande_AS = 5;
+   L = 10; // tamanho da fila
 
    double delta ,b=0.0 ,u=0.0 ,d=0.0,dm=(double)2.0/60,dm_A=2.5/60,delay=0.0,c=0.0 ,ax = 0.005; // duração minima em horas
    
@@ -160,14 +165,13 @@ int main(int argc, char* argv[]){
 	lista_eventos = adicionar(lista_eventos, DEPARTURE,d); 
 
 
-  for (int i = 0; i < k; i++)
+  for (int i = 0;i < k; i++)
   {
      u = (float)(rand()+1)/RAND_MAX;
 	 c = -(log(u)/lambda);
      u = (float)(rand()+1)/RAND_MAX;
 	 d= (float)-dm*log(u); //duração da chamada
      call_type = (float)(rand()+1)/RAND_MAX;
-		
 		if(lista_eventos->tipo == DEPARTURE){ //fim de chamada
 			 //duracao[dep]= (float) d;
 			 duracao[dep] = (float) running(duracao,(float) d,dep);
@@ -181,8 +185,8 @@ int main(int argc, char* argv[]){
 				 del[delayed2-1] = current-queue->tempo;
 				 pred[delayed2-1] = (float) running(pred,(float)(current-queue->tempo),delayed2-1);
 				 erro[delayed2-1] = (float)fabs(del[delayed2-1]-pred[delayed2-1]);
-				 printf("Erro %f\n",erro[delayed2-1]);
-				 printf("pred[%d]= %f del =%f min\n",delayed2-1,60*pred[delayed2-1],60*del[delayed2-1]);
+				//  printf("Erro %f\n",3600*erro[delayed2-1]);
+				//  printf("pred[%d]= %f del =%f min\n",delayed2-1,60*pred[delayed2-1],60*del[delayed2-1]);
 				 if(del[delayed2-1] > ax){
 						count++;
 				 }
@@ -202,7 +206,7 @@ int main(int argc, char* argv[]){
 			}
 		 }
 
-		 if(lista_eventos->tipo == DEPARTURE_AS){ //fim de chamada
+		else if(lista_eventos->tipo == DEPARTURE_AS){ //fim de chamada
              current = lista_eventos->tempo;
 			 ++ds;
 			 lista_eventos = remover(lista_eventos);
@@ -217,9 +221,9 @@ int main(int argc, char* argv[]){
 				 queue_area = remover(queue_area);
 				 ++busy_AS;
 			}
-		 }
+		}
 
-		 if(lista_eventos->tipo == DEPARTURE_A){ //fim de chamada
+		else if(lista_eventos->tipo == DEPARTURE_A){ //fim de chamada
 			 //duracao_gauss[dep_A] = (float) b;
 			 duracao_gauss[dep_A] = (float) running(duracao_gauss,(float) b,dep_A);
              ++ndepartures;
@@ -233,8 +237,8 @@ int main(int argc, char* argv[]){
 				 del[delayed2-1] = current-queue->tempo;
 				 pred[delayed2-1] = (float) running(pred,(float)(current-queue->tempo),delayed2-1);
 				 erro[delayed2-1] = (float)fabs(del[delayed2-1]-pred[delayed2-1]);
-				 printf("Erro %f\n",erro[delayed2-1]);
-				 printf("pred[%d]= %f del =%f min\n",delayed2-1,60*pred[delayed2-1],60*del[delayed2-1]);
+				//  printf("Erro %f\n",erro[delayed2-1]);
+				//  printf("pred[%d]= %f del =%f min\n",delayed2-1,60*pred[delayed2-1],60*del[delayed2-1]);
 				 if(del[delayed2-1] > ax){
 						count++;
 				 }
@@ -246,7 +250,7 @@ int main(int argc, char* argv[]){
 	 				b = b/60; // em horas 
 				 	lista_eventos = adicionar(lista_eventos,DEPARTURE_A,current+b);
 					total_del[new] = (float) b + del[delayed2-1];
-					printf("Atrasos totais[%d] = %f\n",new-1,total_del[new-1]);
+					//printf("Atrasos totais[%d] = %f\n",new-1,total_del[new-1]);
 					++new;
 				 }
 				 queue = remover(queue);
@@ -321,7 +325,7 @@ int main(int argc, char* argv[]){
 					//printf("Transfering to Area Specific\n");
 					// total_del[] = duracao_gauss[area] + del_a[dep_A];
                 }				 
-		 	}
+		}
 
 		else if(lista_eventos->tipo == ARRIVAL_AS){
 		 		    narrivals++;
@@ -340,14 +344,16 @@ int main(int argc, char* argv[]){
 					if(busy_AS < Ngrande_AS){ // Recursos livres? sim: canais ,queue nao interessa
 						busy_AS++;
 						//printf("Area Specific em h: %f\n",d);
-						lista_eventos = adicionar(lista_eventos, DEPARTURE_AS, current+d);
+						if((getCount(queue_area)) == 0){
+							lista_eventos = adicionar(lista_eventos, DEPARTURE_AS, current+d);
+						}
 					}
 
 					else { // queue infinita,mete na fila
 						++delayed_a;			 
 						queue_area = adicionar(queue_area, ARRIVAL_AS, current);
 					}
-		}
+			}
 
 			if(busy < 0){
 				busy=0;
@@ -361,7 +367,7 @@ int main(int argc, char* argv[]){
   }
 
     //imprimir(queue);
-	imprimir(queue_area);
+	//imprimir(queue_area);
 
     printf("Numero de Area Specific specific arrivals:%d\n",as);
 	printf("Numero de Area Specific specific departures:%d\n",ds);
@@ -380,9 +386,9 @@ int main(int argc, char* argv[]){
 	float media3= median(del,delayed);
 	float media4 = median(duracao_gauss,dep_A);
 	float media5= median(del_a,delayed_a);
-	float media6= median(total_del,delayed_a);
+	float media6= median(total_del,as);
 	float media7= median(pred,delayed);
-	pblocking =(float) delayed/(narrivals);
+	pblocking =(float) (delayed)/(narrivals);
 	float plost = (float) lost/narrivals;
 	printf("Chamadas atrasadas : %d\n",delayed);
 	printf("Chamadas perdidas : %d\n",lost);
@@ -397,16 +403,21 @@ int main(int argc, char* argv[]){
 	printf("Média de atraso total em area specific: %f min\n",media6*60);
 	printf("DEL1 %d \t, DEL2 %d\n", delayed, delayed2);
 
+  qsort(erro,delayed2,sizeof(float),cmpfunc);
+  
+  double interval = (erro[delayed2-1] - erro[0])*3600/50;
+
   for (int j = 0; j < delayed2-1; j++)
   {
-    for (int n = 0;n < N/4;n++){
-      if((erro[j] >= n*DELTA) && (erro[j] < (n+1)*DELTA)){
+	erro[j]*=3600; //erro em segundos
+    for (int n = 0;n < 50;n++){
+      if((erro[j] >= n*interval) && (erro[j] < (n+1)*interval)){
         histograma[n]++;
       }
     }
   }
 
-  save(histograma,N);
+  save(histograma,50);
 }
 
 float median(float *vetor,int size){
@@ -430,7 +441,7 @@ int save(int *histograma,int size){
       fprintf(file, "%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
       //printf("%d, %lf, %d\n", j, (2*j+1)/(float)(size*2), histograma[j]);
   }
-  }
+}
 
   
 double BoxMuller(void){
@@ -460,11 +471,11 @@ double BoxMuller(void){
 
 float running(float *avg,float current_sample, int n){
 	if(n > 1){
-		avg[n] =(float) avg[n-1] * (n-1)/n + current_sample * 1/n;
+		avg[n] =(float) avg[n-1] * (n-1)/n + current_sample * 1/n; //
 		return avg[n];
 	}
 	else{
-		return current_sample;    
+		return 0;    
 	}
 }
   
