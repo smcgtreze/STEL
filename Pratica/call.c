@@ -185,8 +185,8 @@ int main(int argc, char* argv[]){
 				 del[delayed2-1] = current-queue->tempo;
 				 pred[delayed2-1] = (double) running(pred,(double)(current-queue->tempo),delayed2-1);
 				 erro[delayed2-1] = (double)fabs(del[delayed2-1]-pred[delayed2-1]);
-				  printf("Erro %lf\n",60*erro[delayed2-1]);
-				  printf("pred[%d]= %lf del =%lf min\n",delayed2-1,60*pred[delayed2-1],60*del[delayed2-1]);
+				  printf("Erro %lf\n",erro[delayed2-1]);
+				  printf("pred[%d]= %lf del =%lf min\n",delayed2-1,pred[delayed2-1],del[delayed2-1]);
 				 if(del[delayed2-1] > ax){
 						count++;
 				 }
