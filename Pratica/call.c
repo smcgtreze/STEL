@@ -163,7 +163,7 @@ int main(int argc, char* argv[]){
 	d= (double)-dm*log(u); //duração da chamada
 	lista_eventos = adicionar(lista_eventos, ARRIVAL, 0);
 	lista_eventos = adicionar(lista_eventos, DEPARTURE,d); 
-
+	float sigmaaa(float media, double *vals, int counter);
 
   for (int i = 0;i < k; i++)
   {
@@ -424,7 +424,8 @@ int main(int argc, char* argv[]){
       }
     }
   }
-
+  
+sigmaaa(media6,total_del,as);
   save(histograma,50);
 }
 
@@ -486,4 +487,23 @@ double running(double *avg,double current_sample, int n){
 		return 0;    
 	}
 }
-  
+
+float sigmaaa(float media, double *vals, int counter){
+	int n=0;
+	float first_step=0,true_value=0;
+	
+	while(n <= counter){
+		//printf("OI");
+		first_step += ((vals[n] - media) * (vals[n] - media));
+		
+		n++;
+		
+	}
+	
+
+	printf("este aqui é %f \n", vals[1000]);
+	
+	true_value = first_step/(n-1);
+	printf("\t TRUE VALUE IS %f \n", true_value);
+	return true_value;
+}
