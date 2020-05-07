@@ -408,7 +408,7 @@ int main(int argc, char* argv[]){
 	printf("\n SUp dwag %lf\n\n", media8*60);
 	double calculus;
 	calculus=(media8/media3) * 100;
-	printf("Real value %lf", calculus);
+	printf("Real value %lf\n", calculus);
 	
 
   qsort(erro,delayed2,sizeof(double),cmpfunc);
@@ -491,17 +491,19 @@ double running(double *avg,double current_sample, int n){
 float sigmaaa(float media, double *vals, int counter){
 	int n=0;
 	float first_step=0,true_value=0;
-	
-	while(n <= counter){
-		//printf("OI");
+	printf("\n \tValor da média %f\n",media);
+	while(n <= 5){
+		
 		first_step += ((vals[n] - media) * (vals[n] - media));
+
+		if(n <= 5){
+			printf("\t \t valor do %lf\n", vals[n]);
+		}
+		
 		
 		n++;
 		
 	}
-	
-
-	printf("este aqui é %f \n", vals[1000]);
 	
 	true_value = first_step/(n-1);
 	printf("\t TRUE VALUE IS %f \n", true_value);
