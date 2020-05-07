@@ -26,6 +26,7 @@ int save(int *histograma,int size);
 double BoxMuller(void);
 int getCount(lista* head);
 double running(double *avg,double current_sample, int n);
+float sigmaaa(float media, double *vals, int counter);
 
 int cmpfunc (const void * a, const void * b) {
    const double *A = a, *B = b;
@@ -125,7 +126,7 @@ int main(int argc, char* argv[]){
    lambda = 80; //calls/hora 
    k = 100000;      //geralmente 5000
    Ngrande = 5;  //nº de canais
-   Ngrande_AS = 5;
+   Ngrande_AS = 10;
    L = 10; // tamanho da fila
 
    double delta ,b=0.0 ,u=0.0 ,d=0.0,dm=(double)2.0/60,dm_A=2.5/60,delay=0.0,c=0.0 ,ax = 0.005; // duração minima em horas
@@ -139,6 +140,7 @@ int main(int argc, char* argv[]){
    double *vetor= malloc(sizeof(double)*(k+2));
    double *del= malloc(sizeof(double)*(k+2));
    double *erro= malloc(sizeof(double)*(k+2));
+   double *errorel= malloc(sizeof(double)*(k+2));
    double *pred= malloc(sizeof(double)*(k+2));
    double *del_a= malloc(sizeof(double)*(k+2));
    double *duracao= malloc(sizeof(double)*(k+2));
@@ -155,6 +157,7 @@ int main(int argc, char* argv[]){
 	memset(duracao_gauss,0,0);
 	memset(del,0,0);
 	memset(erro,0,0);
+	memset(errorel,0,0);
 	memset(pred,0,0);
 	memset(del_a,0,0);
 	memset(total_del,0,0);
@@ -163,7 +166,7 @@ int main(int argc, char* argv[]){
 	d= (double)-dm*log(u); //duração da chamada
 	lista_eventos = adicionar(lista_eventos, ARRIVAL, 0);
 	lista_eventos = adicionar(lista_eventos, DEPARTURE,d); 
-	float sigmaaa(float media, double *vals, int counter);
+
 
   for (int i = 0;i < k; i++)
   {
@@ -184,9 +187,11 @@ int main(int argc, char* argv[]){
 			 	 ++delayed2;
 				 del[delayed2-1] = current-queue->tempo;
 				 pred[delayed2-1] = (double) running(pred,(double)(current-queue->tempo),delayed2-1);
-				 erro[delayed2-1] = (double)fabs(del[delayed2-1]-pred[delayed2-1]);
-				  printf("Erro %lf\n",erro[delayed2-1]);
-				  printf("pred[%d]= %lf del =%lf min\n",delayed2-1,pred[delayed2-1],del[delayed2-1]);
+				 erro[delayed2-1] = (double)(del[delayed2-1]-pred[delayed2-1]);
+				 errorel[delayed2-1] = (double) erro[delayed2-1]/(del[delayed2-1]);
+				//  printf("Erro %lf\n",erro[delayed2-1]);
+				//  printf("Erro relativo %lf\n",errorel[delayed2-1]);
+				//  printf("pred[%d]= %lf del =%lf min\n",delayed2-1,pred[delayed2-1],del[delayed2-1]);
 				 if(del[delayed2-1] > ax){
 						count++;
 				 }
@@ -236,9 +241,11 @@ int main(int argc, char* argv[]){
 			 	 ++delayed2;
 				 del[delayed2-1] = current-queue->tempo;
 				 pred[delayed2-1] = (double) running(pred,(double)(current-queue->tempo),delayed2-1);
-				 erro[delayed2-1] = (double)fabs(del[delayed2-1]-pred[delayed2-1]);
+				 erro[delayed2-1] = (double)(del[delayed2-1]-pred[delayed2-1]);
+				 errorel[delayed2-1] = (double) erro[delayed2-1]/(del[delayed2-1]);
 				//  printf("Erro %lf\n",erro[delayed2-1]);
-				//  printf("pred[%d]= %lf del =%lf min\n",delayed2-1,60*pred[delayed2-1],60*del[delayed2-1]);
+				//  printf("Erro relativo %lf\n",errorel[delayed2-1]);
+				//  printf("pred[%d]= %lf del =%lf min\n",delayed2-1,pred[delayed2-1],del[delayed2-1]);
 				 if(del[delayed2-1] > ax){
 						count++;
 				 }
@@ -362,7 +369,7 @@ int main(int argc, char* argv[]){
 			if(busy_AS < 0){
 				busy_AS=0;
 			}
-	    //printf("%dº /-/ %lf /-/ %lf /-/ %lf /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue_area),busy_AS,delayed_a,lost);
+	   //printf("%dº /-/ %lf /-/ %lf /-/ %lf /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue_area),busy_AS,delayed_a,lost);
 	   //printf("%dº /-/ %lf /-/ %lf /-/ %lf /-/ %d /-/ %d /-/ %d /-/ %d\n", i+1, d, c,current,getCount(queue),busy,delayed,lost);
   }
 
@@ -389,6 +396,7 @@ int main(int argc, char* argv[]){
 	double media6= median(total_del,as);
 	double media7= median(pred,delayed);
 	double media8=median(erro,delayed);
+	double media9=median(errorel,delayed);
 	
 	pblocking =(double) (delayed)/(narrivals);
 	double plost = (double) lost/narrivals;
@@ -402,14 +410,16 @@ int main(int argc, char* argv[]){
 	printf("Média de atraso de fila na entrada general purpose prevista: %lf min\n",media7*60);
 	printf("Média de duração de chamadas general gauss : %lf min\n",duracao_gauss[dep_A-1]*60);
 	printf("Média de atraso de fila em area specific: %lf min\n",media5*60);
-	printf("Média de atraso total em area specific: %lf min\n",media6*60);
-	printf("DEL1 %d \t, DEL2 %d\n", delayed, delayed2);
+	printf("Média de atraso total em area specific: %lf s\n",media6*3600);
+	//printf("DEL1 %d \t, DEL2 %d\n", delayed, delayed2);
 
-	printf("\n SUp dwag %lf\n\n", media8*60);
+	printf("Erro absoluto:%lf em s\n", 3600*media8);
 	double calculus;
-	calculus=(media8/media3) * 100;
-	printf("Real value %lf\n", calculus);
-	
+	calculus=(media9) * 100;
+	printf("Erro relativo:%lf%%\n", calculus); 
+	// No erro relativo consideramos valores negativos (sem módulo nas diferenças entre o valor previsto e o real) porque
+	// consideramos que o valor da previsão ser maior que o valor real não tem consequências para o cliente.
+	// Isto porque ele espera menos tempo.
 
   qsort(erro,delayed2,sizeof(double),cmpfunc);
   
@@ -424,8 +434,7 @@ int main(int argc, char* argv[]){
       }
     }
   }
-  
-sigmaaa(media6,total_del,as);
+  sigmaaa(media6,total_del,as);
   save(histograma,50);
 }
 
@@ -434,6 +443,7 @@ double median(double *vetor,int size){
 	for(int i=0;i < size;i++){
 		soma+=vetor[i];
 	}
+	// printf("Soma:%lf\n",soma);
 	return (soma/size);
 }
 
@@ -479,8 +489,9 @@ double BoxMuller(void){
 }
 
 double running(double *avg,double current_sample, int n){
-	if(n > 1){
-		avg[n] =(double) avg[n-1] * (n-1)/n + current_sample * 1/n; //
+	if(n > 0){
+		avg[n] =(double) (avg[n-1] * (n-1)/(1.0*n) + current_sample * 1.0/(n*1.0)); 
+		//printf("Avg %lf",avg[n]);
 		return avg[n];
 	}
 	else{
@@ -505,7 +516,10 @@ float sigmaaa(float media, double *vals, int counter){
 		
 	}
 	
+
+	//printf("este aqui é %f \n", vals[1000]);
+	
 	true_value = first_step/(n-1);
-	printf("\t TRUE VALUE IS %f \n", true_value);
+	printf("Sigma IS %f s \n", sqrt(3600*true_value));
 	return true_value;
 }
