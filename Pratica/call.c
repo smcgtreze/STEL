@@ -513,10 +513,15 @@ double running(double *avg,double current_sample, int n){
 float sigmaaa(float media, double *vals, int counter){
 	int n=0;
 	float first_step=0,true_value=0;
-	
-	while(n <= counter){
-		//printf("OI");
+	printf("\n \tValor da média %f\n",media);
+	while(n <= 5){
+		
 		first_step += ((vals[n] - media) * (vals[n] - media));
+
+		if(n <= 5){
+			printf("\t \t valor do %lf\n", vals[n]);
+		}
+		
 		
 		n++;
 		
