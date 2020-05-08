@@ -22,7 +22,7 @@ typedef struct{
 } lista;
 
 double median(double *vetor,int size);
-int save(int *histograma,int size);
+int save(int *histograma,int size,double interval);
 double BoxMuller(void);
 int getCount(lista* head);
 double running(double *avg,double current_sample, int n);
@@ -124,9 +124,9 @@ int main(int argc, char* argv[]){
    queue_area = NULL;
 
    lambda = 80; //calls/hora 
-   k = 100000;      //geralmente 5000
+   k = 10000000;      //geralmente 5000
    Ngrande = 5;  //nº de canais
-   Ngrande_AS = 10;
+   Ngrande_AS = 5;
    L = 10; // tamanho da fila
 
    double delta ,b=0.0 ,u=0.0 ,d=0.0,dm=(double)2.0/60,dm_A=2.5/60,delay=0.0,c=0.0 ,ax = 0.005; // duração minima em horas
@@ -417,25 +417,36 @@ int main(int argc, char* argv[]){
 	double calculus;
 	calculus=(media9) * 100;
 	printf("Erro relativo:%lf%%\n", calculus); 
+
+	printf("Erro absoluto com médias:%lf em s\n",(media3-media7)*3600);
+	printf("Erro relativo com médias:%lf%%\n", 100*(media3-media7)/media3); 
+	//printf("Erro relativo melhorado:%lf%%\n", 3600*media8/media3); 
 	// No erro relativo consideramos valores negativos (sem módulo nas diferenças entre o valor previsto e o real) porque
 	// consideramos que o valor da previsão ser maior que o valor real não tem consequências para o cliente.
 	// Isto porque ele espera menos tempo.
 
   qsort(erro,delayed2,sizeof(double),cmpfunc);
   
-  double interval = (erro[delayed2-1] - erro[0])*3600/50;
+  double interval1 = (erro[delayed-1] - media8)/25;
+  double interval2 = -(erro[0] - media8)/25;
+  double interval = (interval1+interval2)/10*3600;
+
+//   printf("Intervalo: %lf \n",interval);
+//   printf("Mínimo: %lf \n",3600*erro[0]);
+//   printf("Máximo: %lf \n",3600*erro[delayed2-1]);
 
   for (int j = 0; j < delayed2-1; j++)
   {
 	erro[j]*=3600; //erro em segundos
-    for (int n = 0;n < 50;n++){
+    for (int n = -25;n < 25;n++){
       if((erro[j] >= n*interval) && (erro[j] < (n+1)*interval)){
-        histograma[n]++;
+		//printf("j:%d %lf\n",j,erro[j]);
+        histograma[n+25]++;
       }
     }
   }
   sigmaaa(media6,total_del,as);
-  save(histograma,50);
+  save(histograma,50,interval);
 }
 
 double median(double *vetor,int size){
@@ -447,7 +458,7 @@ double median(double *vetor,int size){
 	return (soma/size);
 }
 
-int save(int *histograma,int size){
+int save(int *histograma,int size,double interval){
   FILE* file;
   file= fopen("call.csv","w+");
 
@@ -455,10 +466,10 @@ int save(int *histograma,int size){
     printf("Erro a abrir o ficheiro\n");
   }
 
-  for (int j = 0; j < size; j++)
+  for (int j = -25; j < size/2; j++)
   {
-      fprintf(file, "%d, %lf, %d\n", j, (2*j+1)/(double)(size*2), histograma[j]);
-      //printf("%d, %lf, %d\n", j, (2*j+1)/(double)(size*2), histograma[j]);
+      fprintf(file, "%d, %.4lf, %d\n", j,interval*j, histograma[j+25]);
+	  //printf("%d, %lf, %d\n", j,interval*j, histograma[j+25]);
   }
 }
 
