@@ -124,7 +124,7 @@ int main(int argc, char* argv[]){
    queue_area = NULL;
 
    lambda = 80; //calls/hora 
-   k = 10000000;      //geralmente 5000
+   k = 100000;      //geralmente 1000000
    Ngrande = 5;  //nº de canais
    Ngrande_AS = 5;
    L = 10; // tamanho da fila
